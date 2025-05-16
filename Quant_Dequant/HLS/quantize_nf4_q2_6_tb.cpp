@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <chrono>  // <-- For timing
 #include "quantize_nf4_q2_6.hpp"
 
 #define Q_SIZE 65536
@@ -12,7 +13,7 @@ int main() {
     fixed8_t Q_bram[Q_SIZE];
     for (int i = 0; i < Q_SIZE; ++i) {
         // Fill with some values between -1.0 and 1.0
-        Q_bram[i] = fixed8_t(std::sin(i * 0.00001)); 
+        Q_bram[i] = fixed8_t(std::sin(i * 0.00001));
     }
 
     // Output arrays
@@ -24,6 +25,9 @@ int main() {
     for (int i = 0; i < OUTPUT_WEIGHTS_SIZE; ++i) output_weights[i] = 0;
     for (int i = 0; i < OUTPUT_Q1_SIZE; ++i) output_q1[i] = 0;
     for (int i = 0; i < OUTPUT_Q2_SIZE; ++i) output_q2[i] = 0;
+
+    // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Run quantization
     quantize_nf4_q2_6(
@@ -38,6 +42,13 @@ int main() {
         0                   // output_q2_addr
     );
 
+    // Stop timing
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+
+    // Print timing
+    std::cout << "\nQuantization took " << elapsed.count() << " ms\n";
+
     // Print a few output weights
     std::cout << "Output Weights (first 8 bytes):\n";
     for (int i = 0; i < 8; ++i) {
@@ -47,7 +58,7 @@ int main() {
     // Print q1 constants
     std::cout << "\nOutput Q1 constants:\n";
     for (int i = 0; i < 10; ++i) {
-        std::cout << "Q1[" << i << "] = " <<  output_q1[i].to_float() << "\n";
+        std::cout << "Q1[" << i << "] = " << output_q1[i].to_float() << "\n";
     }
 
     // Print q2 constants
