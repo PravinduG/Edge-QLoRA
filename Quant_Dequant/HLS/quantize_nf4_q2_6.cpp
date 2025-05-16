@@ -41,7 +41,7 @@ inline nf4_t quantize_to_nf4_index(fixed8_t value) {
 // Top-level function
 
 void quantize_nf4_q2_6(
-    fixed8_t *Q_bram,
+    fixed8_t *Q_bram,               // Unquantized weights. Implement bram in top level func and pass in as pointer
     ap_uint<8> *output_weights,     // Packed 2x4-bit NF4 codes per byte
     fixed8_t *output_q1,            // 1 per 64 output_weight
     fixed8_t *output_q2,            // 1 per 256 output_q1
@@ -50,7 +50,8 @@ void quantize_nf4_q2_6(
     int output_q1_addr,             // Base output for first layer quant constants
     int output_q2_addr              // Base output for second layer quant constants
 ) {
-#pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem
+// #pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem
+#pragma HLS INTERFACE bram port=Q_bram
 #pragma HLS INTERFACE m_axi port=output_weights offset=slave bundle=gmem
 #pragma HLS INTERFACE m_axi port=output_q1 offset=slave bundle=gmem
 #pragma HLS INTERFACE m_axi port=output_q2 offset=slave bundle=gmem
