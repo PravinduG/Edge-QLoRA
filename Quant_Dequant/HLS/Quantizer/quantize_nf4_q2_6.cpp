@@ -25,10 +25,17 @@ inline fixed8_t fixed_abs(fixed8_t val) {
 
 // Quantize to nearest NF4 index
 inline nf4_t quantize_to_nf4_index(fixed8_t value) {
+
+    // Create copy of lookup table and partition
+    fixed8_t lookup_values[NUM_NF4_CODES];
+    #pragma HLS BIND_STORAGE variable=lookup_values type=ram_1p impl=bram
+    #pragma HLS ARRAY_PARTITION variable=lookup_values complete dim=1
+
     nf4_t best_idx = 0;
     fixed8_t min_dist = fixed_abs(value - lookup_values[0]);
 
     for (int i = 1; i < NUM_NF4_CODES; i++) {
+        #pragma HLS UNROLL
         fixed8_t dist = fixed_abs(value - lookup_values[i]);
         if (dist < min_dist) {
             min_dist = dist;
@@ -51,7 +58,7 @@ void quantize_nf4_q2_6(
     int output_q2_addr              // Base output for second layer quant constants
 ) {
 // #pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem
-#pragma HLS INTERFACE bram port=Q_bram
+#pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem // Use BRAM. not DDR
 #pragma HLS INTERFACE m_axi port=output_weights offset=slave bundle=gmem
 #pragma HLS INTERFACE m_axi port=output_q1 offset=slave bundle=gmem
 #pragma HLS INTERFACE m_axi port=output_q2 offset=slave bundle=gmem
@@ -103,11 +110,12 @@ void quantize_nf4_q2_6(
 
         // Level 2 Quantization (over 256 Q1 constants)
         fixed8_t max_q1 = 0;
-        #pragma HLS UNROLL              // Compare against pipeline
         for (int i = 0; i < blocks_64; i++) {
+            #pragma HLS PIPELINE II=1
             fixed8_t abs_q = fixed_abs(q1_constants[i]);
             if (abs_q > max_q1) max_q1 = abs_q;
         }
+
         output_q2[output_q2_addr++] = max_q1;
         output_q1_addr += blocks_64;
         output_w_addr += blocks_64 * LAYER1_BLOCK_SIZE/2;
