@@ -7,9 +7,6 @@
 #define LAYER2_BLOCK_SIZE 256
 #define NUM_NF4_CODES 16
 
-// Maximum amount of weights to be dequantized at once
-// const int MAX_SIZE = 65536; 
-
 typedef ap_fixed<8, 2> fixed8_t;
 typedef ap_uint<4> nf4_t; // 4-bit NF4 code
 
@@ -20,8 +17,6 @@ const fixed8_t lookup_values[NUM_NF4_CODES] = {
     fixed8_t(0.0795803), fixed8_t(0.1609302), fixed8_t(0.2461123), fixed8_t(0.33791524),
     fixed8_t(0.44070983), fixed8_t(0.562617), fixed8_t(0.72295684), fixed8_t(1.0)
 };
-
-
 
 // Top-level function
 
@@ -34,27 +29,30 @@ void dequantize_nf4_q2_6(
     int input_q1_addr,                   // Base output for first layer quant constants
     int input_q2_addr,                   // Base output for second layer quant constants
     fixed8_t *DQ_bram                    // Dequantized weights --> Allocate bram in top level function and pass pointer
-    
 ) {
-// #pragma HLS INTERFACE m_axi port=DQ_bram offset=slave bundle=gmem // Use BRAM. not DDR
-#pragma HLS INTERFACE m_axi port=input_weights offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi port=input_q1 offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi port=input_q2 offset=slave bundle=gmem
-#pragma HLS INTERFACE s_axilite port=start_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=end_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=input_w_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=input_q1_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=input_q2_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=return bundle=control
-
+    #pragma HLS INTERFACE m_axi port=DQ_bram offset=slave bundle=gmem 
+    #pragma HLS INTERFACE m_axi port=input_weights offset=slave bundle=gmem
+    #pragma HLS INTERFACE m_axi port=input_q1 offset=slave bundle=gmem
+    #pragma HLS INTERFACE m_axi port=input_q2 offset=slave bundle=gmem
+    #pragma HLS INTERFACE s_axilite port=start_addr bundle=control
+    #pragma HLS INTERFACE s_axilite port=end_addr bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_w_addr bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_q1_addr bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_q2_addr bundle=control
+    #pragma HLS INTERFACE s_axilite port=return bundle=control
 
     // BRAM buffers
     ap_uint<8> weights_buf[LAYER1_BLOCK_SIZE * LAYER2_BLOCK_SIZE / 2]; // 8192 bytes
     fixed8_t q1_buf[LAYER2_BLOCK_SIZE];  // 256 values
 
     // Partition to enable full unrolling of loops
-    #pragma HLS ARRAY_PARTITION variable=weights_buf complete dim=1
+    #pragma HLS ARRAY_PARTITION variable=weights_buf cyclic factor=64 dim=1
     #pragma HLS ARRAY_PARTITION variable=q1_buf complete dim=1
+
+    // Create copy of lookup table and partition
+    fixed8_t lookup_values[NUM_NF4_CODES];
+    // #pragma HLS BIND_STORAGE variable=lookup_values type=ram_1p impl=bram
+    // #pragma HLS ARRAY_PARTITION variable=lookup_values complete dim=1
 
     for (int addr = start_addr; addr < end_addr; addr += LAYER1_BLOCK_SIZE * LAYER2_BLOCK_SIZE) {
         int remaining = end_addr - addr;
@@ -67,11 +65,11 @@ void dequantize_nf4_q2_6(
 
         // Load Q1 block scales (256 values)
         for (int i = 0; i < blocks_64; i++) {
-            // #pragma HLS PIPELINE II=1
+            #pragma HLS PIPELINE II=1
             q1_buf[i] = input_q1[input_q1_addr++];
         }
 
-        // Load 256 * 64 / 2 = 8192 bytes of quantized weights
+        // Load 256 * 64 / 2 = 8192 bytes of quantized weights 
         for (int i = 0; i < (blocks_64 * LAYER1_BLOCK_SIZE / 2); i++) {
             #pragma HLS PIPELINE II=1
             weights_buf[i] = input_weights[input_w_addr + i];
@@ -80,6 +78,9 @@ void dequantize_nf4_q2_6(
         // Now process
         int out_index = addr;
         for (int b = 0; b < blocks_64; b++) {
+
+            #pragma HLS UNROLL factor=2
+
             fixed8_t total_scale = q1_buf[b] * q2_scale;
 
             for (int i = 0; i < LAYER1_BLOCK_SIZE; i += 2) {
