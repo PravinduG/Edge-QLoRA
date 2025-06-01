@@ -1,3 +1,4 @@
+
 #ifndef DEQUANTIZE_NF4_Q2_6_HPP
 #define DEQUANTIZE_NF4_Q2_6_HPP
 

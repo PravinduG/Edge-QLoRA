@@ -3,6 +3,7 @@
 #include <hls_stream.h>
 #include <stdint.h>
 
+#define MAX_SIZE 589824 // 768 * 768
 #define LAYER1_BLOCK_SIZE 64
 #define LAYER2_BLOCK_SIZE 256
 #define NUM_NF4_CODES 16
@@ -58,16 +59,16 @@ void quantize_nf4_q2_6(
     int output_q2_addr              // Base output for second layer quant constants
 ) {
 // #pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem // Use BRAM. not DDR
-#pragma HLS INTERFACE m_axi port=output_weights offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi port=output_q1 offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi port=output_q2 offset=slave bundle=gmem
-#pragma HLS INTERFACE s_axilite port=start_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=end_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=output_w_addr bundle=control
+#pragma HLS INTERFACE m_axi     port=Q_bram         offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+#pragma HLS INTERFACE m_axi     port=output_weights offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+#pragma HLS INTERFACE m_axi     port=output_q1      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+#pragma HLS INTERFACE m_axi     port=output_q2      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+#pragma HLS INTERFACE s_axilite port=start_addr     bundle=control
+#pragma HLS INTERFACE s_axilite port=end_addr       bundle=control
+#pragma HLS INTERFACE s_axilite port=output_w_addr  bundle=control
 #pragma HLS INTERFACE s_axilite port=output_q1_addr bundle=control
 #pragma HLS INTERFACE s_axilite port=output_q2_addr bundle=control
-#pragma HLS INTERFACE s_axilite port=return bundle=control
+#pragma HLS INTERFACE s_axilite port=return         bundle=control
 
     for (int addr = start_addr; addr < end_addr; addr += LAYER1_BLOCK_SIZE * LAYER2_BLOCK_SIZE) {
         // Actual number of elements left

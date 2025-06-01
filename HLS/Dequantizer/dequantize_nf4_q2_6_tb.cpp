@@ -63,19 +63,19 @@ int main() {
 
     // Print a few output weights
     std::cout << "Output Weights (first 8 bytes):\n";
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 4; ++i) {
         std::cout << "Byte " << i << ": 0x" << std::hex << (int)output_weights[i] << std::dec << "\n";
     }
 
     // Print q1 constants
     std::cout << "\nOutput Q1 constants:\n";
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 4; ++i) {
         std::cout << "Q1[" << i << "] = " << output_q1[i].to_float() << "\n";
     }
 
     // Print q2 constants
     std::cout << "\nOutput Q2 constants:\n";
-    for (int i = 0; i < OUTPUT_Q2_SIZE; ++i) {
+    for (int i = 0; i < 4; ++i) {
         std::cout << "Q2[" << i << "] = " << output_q2[i].to_float() << "\n";
     }
 
