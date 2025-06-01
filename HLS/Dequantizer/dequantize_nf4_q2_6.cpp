@@ -3,6 +3,7 @@
 #include <hls_stream.h>
 #include <stdint.h>
 
+#define MAX_SIZE 65536 // 768 * 768
 #define LAYER1_BLOCK_SIZE 64
 #define LAYER2_BLOCK_SIZE 256
 #define NUM_NF4_CODES 16
@@ -30,16 +31,16 @@ void dequantize_nf4_q2_6(
     int input_q2_addr,                   // Base output for second layer quant constants
     fixed8_t *DQ_bram                    // Dequantized weights --> Allocate bram in top level function and pass pointer
 ) {
-    #pragma HLS INTERFACE m_axi port=DQ_bram offset=slave bundle=gmem 
-    #pragma HLS INTERFACE m_axi port=input_weights offset=slave bundle=gmem
-    #pragma HLS INTERFACE m_axi port=input_q1 offset=slave bundle=gmem
-    #pragma HLS INTERFACE m_axi port=input_q2 offset=slave bundle=gmem
-    #pragma HLS INTERFACE s_axilite port=start_addr bundle=control
-    #pragma HLS INTERFACE s_axilite port=end_addr bundle=control
-    #pragma HLS INTERFACE s_axilite port=input_w_addr bundle=control
-    #pragma HLS INTERFACE s_axilite port=input_q1_addr bundle=control
-    #pragma HLS INTERFACE s_axilite port=input_q2_addr bundle=control
-    #pragma HLS INTERFACE s_axilite port=return bundle=control
+    #pragma HLS INTERFACE m_axi     port=DQ_bram        offset=slave    bundle=gmem depth = MAX_SIZE    max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+    #pragma HLS INTERFACE m_axi     port=input_weights  offset=slave    bundle=gmem depth = MAX_SIZE    max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+    #pragma HLS INTERFACE m_axi     port=input_q1       offset=slave    bundle=gmem depth = MAX_SIZE    max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+    #pragma HLS INTERFACE m_axi     port=input_q2       offset=slave    bundle=gmem depth = MAX_SIZE    max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+    #pragma HLS INTERFACE s_axilite port=start_addr     bundle=control
+    #pragma HLS INTERFACE s_axilite port=end_addr       bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_w_addr   bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_q1_addr  bundle=control
+    #pragma HLS INTERFACE s_axilite port=input_q2_addr  bundle=control
+    #pragma HLS INTERFACE s_axilite port=return         bundle=control
 
     // BRAM buffers
     ap_uint<8> weights_buf[LAYER1_BLOCK_SIZE * LAYER2_BLOCK_SIZE / 2]; // 8192 bytes
