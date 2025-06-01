@@ -59,10 +59,10 @@ void quantize_nf4_q2_6(
     int output_q2_addr              // Base output for second layer quant constants
 ) {
 // #pragma HLS INTERFACE m_axi port=Q_bram offset=slave bundle=gmem
-#pragma HLS INTERFACE m_axi     port=Q_bram         offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
-#pragma HLS INTERFACE m_axi     port=output_weights offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
-#pragma HLS INTERFACE m_axi     port=output_q1      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
-#pragma HLS INTERFACE m_axi     port=output_q2      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 // data_width=32
+#pragma HLS INTERFACE m_axi     port=Q_bram         offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 data_width=32
+#pragma HLS INTERFACE m_axi     port=output_weights offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 data_width=32
+#pragma HLS INTERFACE m_axi     port=output_q1      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 data_width=32
+#pragma HLS INTERFACE m_axi     port=output_q2      offset=slave   bundle=gmem depth = MAX_SIZE max_read_burst_length=16 max_write_burst_length=16 data_width=32
 #pragma HLS INTERFACE s_axilite port=start_addr     bundle=control
 #pragma HLS INTERFACE s_axilite port=end_addr       bundle=control
 #pragma HLS INTERFACE s_axilite port=output_w_addr  bundle=control
